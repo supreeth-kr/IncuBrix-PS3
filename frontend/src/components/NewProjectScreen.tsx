@@ -404,7 +404,7 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
             </label>
             <span className="text-[11px] text-accent-lime font-medium flex items-center space-x-1">
               <Sparkles className="w-3 h-3" />
-              <span>AI Diffusion + Motion Rendering</span>
+              <span>Gemini Pro & Flux Diffusion + Motion</span>
             </span>
           </div>
 
@@ -414,7 +414,7 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
                 id: "ai_images",
                 title: "AI Generated Images",
                 badge: "Recommended",
-                desc: "Synthesizes custom photorealistic visuals for each scene according to your script, animated into 30fps motion B-roll.",
+                desc: "Synthesizes custom photorealistic 8K visuals for each scene according to your script using Gemini Pro or Flux diffusion, animated into 30fps motion B-roll.",
                 icon: Sparkles,
               },
               {

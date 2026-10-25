@@ -48,14 +48,24 @@ class VideoRenderer:
 
         prepared_clips: List[str] = []
 
-        # Step 1: Normalise each scene clip
+        # Step 1: Normalise each scene clip (with transition padding for smooth cinematic crossfade)
+        num_scenes = len(scenes)
+        # Compute safe transition duration (up to 0.5s, capped at half the shortest scene duration)
+        if num_scenes > 1:
+            shortest_dur = min(max(0.5, s.get("duration", 3.0)) for s in scenes)
+            trans_dur = min(0.5, shortest_dur / 2.0)
+            trans_dur = max(0.2, trans_dur)
+        else:
+            trans_dur = 0.0
+
         for i, scene in enumerate(scenes):
             clip_src = scene.get("source_asset_path")
             dur = max(0.5, scene.get("duration", 3.0))
+            # Clips prior to the final scene get extra padding so they can smoothly cross-dissolve into the next
+            render_dur = (dur + trans_dur) if (i < num_scenes - 1) else dur
             norm_clip_path = os.path.join(ratio_work_dir, f"norm_scene_{i:02d}.mp4")
 
             # Scale and crop to target resolution with 30fps
-            # scale=w:h:force_original_aspect_ratio=increase,crop=w:h
             vf = (
                 f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,"
                 f"crop={target_w}:{target_h},fps=30,format=yuv420p"
@@ -66,7 +76,7 @@ class VideoRenderer:
                 "-y",
                 "-stream_loop", "-1",  # Loop if clip is shorter than scene
                 "-i", clip_src,
-                "-t", f"{dur:.3f}",
+                "-t", f"{render_dur:.3f}",
                 "-vf", vf,
                 "-c:v", "libx264",
                 "-preset", "veryfast",
@@ -89,37 +99,86 @@ class VideoRenderer:
                 )
             prepared_clips.append(norm_clip_path)
 
-        # Step 2: Write concat list
-        concat_list_file = os.path.join(ratio_work_dir, "concat_list.txt")
-        with open(concat_list_file, "w", encoding="utf-8") as f:
-            for p in prepared_clips:
-                # Concat demuxer expects forward slashes or escaped backslashes
-                escaped_path = p.replace("\\", "/")
-                f.write(f"file '{escaped_path}'\n")
-
+        # Step 2: Combine scene clips with smooth cinematic cross-dissolve transitions
         raw_concat_video = os.path.join(ratio_work_dir, "concatenated_raw.mp4")
-        cmd_concat = [
-            ffmpeg_bin,
-            "-y",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", concat_list_file,
-            "-c", "copy",
-            raw_concat_video,
-        ]
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd_concat,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        _, stderr = await proc.communicate()
-        if proc.returncode != 0:
-            raise AppException(
-                status_code=500,
-                code="FFMPEG_CONCAT_FAILED",
-                message=f"Failed to concatenate scene clips: {stderr.decode()[:300]}",
-            )
+        if num_scenes == 1:
+            # Single scene: copy normalized clip directly
+            raw_concat_video = prepared_clips[0]
+        else:
+            # Multi-scene: apply cinematic cross-dissolve xfade transitions between adjacent clips
+            used_xfade = False
+            try:
+                cmd_xfade = [ffmpeg_bin, "-y"]
+                for p in prepared_clips:
+                    cmd_xfade.extend(["-i", p])
+
+                filter_parts = []
+                prev_tag = "[0:v]"
+                accum_offset = 0.0
+                for i in range(1, num_scenes):
+                    scene_dur = max(0.5, scenes[i - 1].get("duration", 3.0))
+                    accum_offset += scene_dur
+                    out_tag = f"[v{i}]" if i < num_scenes - 1 else "[vout]"
+                    filter_parts.append(
+                        f"{prev_tag}[{i}:v]xfade=transition=fade:duration={trans_dur:.3f}:offset={accum_offset:.3f}{out_tag}"
+                    )
+                    prev_tag = out_tag
+
+                filter_complex = ";".join(filter_parts)
+                cmd_xfade.extend([
+                    "-filter_complex", filter_complex,
+                    "-map", "[vout]",
+                    "-c:v", "libx264",
+                    "-preset", "veryfast",
+                    "-crf", "22",
+                    "-pix_fmt", "yuv420p",
+                    raw_concat_video,
+                ])
+
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd_xfade,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                _, stderr = await proc.communicate()
+                if proc.returncode == 0 and os.path.exists(raw_concat_video) and os.path.getsize(raw_concat_video) > 0:
+                    used_xfade = True
+                    logger.info("Successfully rendered smooth cinematic cross-dissolve transitions between scenes.")
+                else:
+                    logger.warning(f"FFmpeg xfade transition failed: {stderr.decode()[:200]}. Falling back to concat demuxer.")
+            except Exception as e:
+                logger.warning(f"Error during xfade transition processing: {e}. Falling back to concat demuxer.")
+
+            if not used_xfade:
+                # Fallback: concat demuxer
+                concat_list_file = os.path.join(ratio_work_dir, "concat_list.txt")
+                with open(concat_list_file, "w", encoding="utf-8") as f:
+                    for p in prepared_clips:
+                        escaped_path = p.replace("\\", "/")
+                        f.write(f"file '{escaped_path}'\n")
+
+                cmd_concat = [
+                    ffmpeg_bin,
+                    "-y",
+                    "-f", "concat",
+                    "-safe", "0",
+                    "-i", concat_list_file,
+                    "-c", "copy",
+                    raw_concat_video,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd_concat,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                _, stderr = await proc.communicate()
+                if proc.returncode != 0:
+                    raise AppException(
+                        status_code=500,
+                        code="FFMPEG_CONCAT_FAILED",
+                        message=f"Failed to concatenate scene clips: {stderr.decode()[:300]}",
+                    )
 
         # Step 3: Merge audio and burn captions if enabled
         cmd_final = [

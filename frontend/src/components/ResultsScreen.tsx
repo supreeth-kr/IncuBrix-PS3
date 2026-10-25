@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, Film, FileText, CheckCircle2, Sliders, ExternalLink, ShieldCheck, AlertTriangle, Play, Sparkles } from "lucide-react";
+import { Download, Film, FileText, CheckCircle2, Sliders } from "lucide-react";
 import { Job, Scene } from "../types/api";
 
 interface ResultsScreenProps {
@@ -185,72 +185,6 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               </a>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Licensing & Rights Summary Table */}
-      <div className="p-6 rounded-2xl bg-surface-900 border border-surface-800 shadow-card space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-base text-white">Scene & Licensing Breakdown</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Complete source tracking, attribution requirements, and commercial-use verification
-            </p>
-          </div>
-          <span className="text-xs font-mono text-slate-400">{scenes.length} Scenes Total</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-surface-800 text-slate-400 font-mono uppercase text-[10px]">
-                <th className="py-3 px-3">#</th>
-                <th className="py-3 px-3">Narration Excerpt</th>
-                <th className="py-3 px-3">Timing</th>
-                <th className="py-3 px-3">Provider</th>
-                <th className="py-3 px-3">License Name</th>
-                <th className="py-3 px-3">Commercial Use</th>
-                <th className="py-3 px-3">Rights</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-800/60">
-              {scenes.map((scene) => (
-                <tr key={scene.id} className="hover:bg-surface-850/50 transition">
-                  <td className="py-3 px-3 font-mono font-bold text-slate-300">
-                    #{scene.scene_index + 1}
-                  </td>
-                  <td className="py-3 px-3 text-slate-200 max-w-xs truncate" title={scene.narration_text}>
-                    {scene.narration_text}
-                  </td>
-                  <td className="py-3 px-3 font-mono text-slate-400">
-                    {scene.start_time.toFixed(1)}s &ndash; {scene.end_time.toFixed(1)}s
-                  </td>
-                  <td className="py-3 px-3 capitalize text-slate-300">
-                    {scene.source_provider.replace("_", " ")}
-                  </td>
-                  <td className="py-3 px-3 text-slate-300 font-mono text-[11px]">
-                    {scene.license_name}
-                  </td>
-                  <td className="py-3 px-3 uppercase font-mono text-[11px] text-slate-400">
-                    {scene.commercial_use_status}
-                  </td>
-                  <td className="py-3 px-3">
-                    {scene.rights_verified ? (
-                      <span className="inline-flex items-center space-x-1 text-emerald-400 font-medium text-[11px]">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Verified</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center space-x-1 text-amber-400 font-medium text-[11px]">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Unverified</span>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

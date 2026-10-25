@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "IncuBrix Script & Voiceover to B-Roll Engine"
+    APP_NAME: str = "BrollIQ - Script & Voiceover to B-Roll Video Engine"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     STORAGE_BACKEND: str = "local"  # "local" or "s3"
     LOCAL_STORAGE_DIR: str = "./storage"
     S3_ENDPOINT_URL: Optional[str] = None
-    S3_BUCKET_NAME: str = "incubrix-videos"
+    S3_BUCKET_NAME: str = "brolliq-videos"
     S3_ACCESS_KEY: Optional[str] = None
     S3_SECRET_KEY: Optional[str] = None
     S3_REGION: str = "us-east-1"
@@ -41,13 +41,19 @@ class Settings(BaseSettings):
     PEXELS_API_KEY: Optional[str] = None
     PIXABAY_API_KEY: Optional[str] = None
 
+    # AI Visual & LLM Engine Keys
+    GEMINI_API_KEY: Optional[str] = None
+    GOOGLE_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    AI_IMAGE_ENGINE: str = "auto"  # "auto", "gemini", "flux", "dalle"
+    AI_IMAGE_TIMEOUT_SECONDS: int = 45  # Generative diffusion needs sufficient time
+
     # TTS & Transcription
     DEFAULT_VOICE: str = "en-US-AriaNeural"
-    OPENAI_API_KEY: Optional[str] = None
     ENABLE_DETERMINISTIC_FALLBACK: bool = True
 
     # Security & Callbacks
-    WEBHOOK_SECRET: str = "incubrix-signature-secret-key-2026"
+    WEBHOOK_SECRET: str = "brolliq-signature-secret-key-2026"
     MAX_AUDIO_DURATION_SECONDS: int = 600  # 10 minutes max
     MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024  # 50 MB
 

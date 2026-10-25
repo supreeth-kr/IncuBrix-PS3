@@ -1,4 +1,4 @@
-import { CreateJobPayload, Job, ReplaceScenePayload, Scene, SystemStatus } from "../types/api";
+import { AppSettings, CreateJobPayload, Job, ReplaceScenePayload, Scene, SystemStatus, UpdateSettingsPayload } from "../types/api";
 
 const BASE_URL = "/api/v1";
 
@@ -132,6 +132,25 @@ export async function emptyTrash(): Promise<{ message: string; purged_count: num
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data?.error?.message || "Failed to empty trash");
+  }
+  return data;
+}
+
+export async function fetchSettings(): Promise<AppSettings> {
+  const res = await fetch(`${BASE_URL}/settings`);
+  if (!res.ok) throw new Error("Failed to load settings");
+  return res.json();
+}
+
+export async function updateSettings(payload: UpdateSettingsPayload): Promise<AppSettings> {
+  const res = await fetch(`${BASE_URL}/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to save settings");
   }
   return data;
 }

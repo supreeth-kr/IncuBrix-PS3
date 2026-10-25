@@ -5,7 +5,6 @@ import { NewProjectScreen } from "./components/NewProjectScreen";
 import { SceneEditorScreen } from "./components/SceneEditorScreen";
 import { ProcessingScreen } from "./components/ProcessingScreen";
 import { ResultsScreen } from "./components/ResultsScreen";
-import { SettingsScreen } from "./components/SettingsScreen";
 import { CreateJobPayload, Job, Scene, SystemStatus } from "./types/api";
 import {
   createJob,
@@ -22,7 +21,7 @@ import {
   uploadAudioJob,
 } from "./api/client";
 
-type Screen = "dashboard" | "new" | "editor" | "processing" | "results" | "settings";
+type Screen = "dashboard" | "new" | "editor" | "processing" | "results";
 
 export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>("dashboard");
@@ -202,7 +201,6 @@ export const App: React.FC = () => {
       <Navbar
         currentScreen={currentScreen}
         onNavigate={(screen) => setCurrentScreen(screen)}
-        systemStatus={systemStatus}
         activeJobId={activeJob?.job_id || null}
       />
 
@@ -261,21 +259,12 @@ export const App: React.FC = () => {
           />
         )}
 
-        {currentScreen === "settings" && (
-          <SettingsScreen
-            systemStatus={systemStatus}
-            onRefreshStatus={async () => {
-              const s = await fetchReadiness();
-              setSystemStatus(s);
-              showToast("System readiness refreshed.");
-            }}
-          />
-        )}
+
       </main>
 
       {/* Global Footer */}
       <footer className="border-t border-surface-900 bg-surface-950 py-6 text-center text-xs text-slate-500">
-        IncuBrix AI B-Roll Video Engine &bull; Engineering Assessment 3 &bull; Broadcast H.264 / AAC 30fps
+        BrollIQ AI B-Roll Video Engine &bull; Powered by Gemini Pro & Flux Diffusion &bull; Broadcast H.264 / AAC 30fps
       </footer>
     </div>
   );

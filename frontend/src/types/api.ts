@@ -83,3 +83,24 @@ export interface SystemStatus {
     providers: Record<string, string>;
   };
 }
+
+export interface AppSettings {
+  app_name: string;
+  app_version: string;
+  ai_image_engine: string;
+  gemini_configured: boolean;
+  gemini_masked_key?: string | null;
+  openai_configured: boolean;
+  openai_masked_key?: string | null;
+  pexels_configured: boolean;
+  pixabay_configured: boolean;
+  ffmpeg_binary: string;
+}
+
+export interface UpdateSettingsPayload {
+  gemini_api_key?: string;
+  openai_api_key?: string;
+  pexels_api_key?: string;
+  pixabay_api_key?: string;
+  ai_image_engine?: string;
+}

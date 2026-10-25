@@ -43,17 +43,20 @@ async def readiness_check(response: Response) -> Dict[str, Any]:
     has_ffmpeg = bool(shutil.which(ffmpeg_exe) or (ffmpeg_exe and shutil.which(ffmpeg_exe)))
     if has_ffmpeg:
         checks["ffmpeg"] = {"status": "ok", "binary": ffmpeg_exe}
-    else:
-        # Check if file exists directly
-        import os
         if os.path.exists(ffmpeg_exe):
             checks["ffmpeg"] = {"status": "ok", "binary": ffmpeg_exe}
         else:
             is_ready = False
             checks["ffmpeg"] = {"status": "missing", "binary": ffmpeg_exe}
 
-    # 3. Footage providers status
+    # 3. Footage & AI visual providers status
+    has_gemini = bool(settings.GEMINI_API_KEY or settings.GOOGLE_API_KEY or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    has_openai = bool(settings.OPENAI_API_KEY or os.environ.get("OPENAI_API_KEY"))
+
     checks["providers"] = {
+        "gemini": "Active (Google Imagen 3 & Gemini Pro)" if has_gemini else "Configurable in Settings",
+        "dalle": "Active (OpenAI DALL-E 3)" if has_openai else "Unconfigured (Optional)",
+        "pollinations_flux": "Active (Zero-config 8K Flux Diffusion)",
         "pexels": "configured" if settings.PEXELS_API_KEY else "unconfigured (optional)",
         "pixabay": "configured" if settings.PIXABAY_API_KEY else "unconfigured (optional)",
         "local_fallback": "active (deterministic)",

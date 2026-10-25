@@ -26,36 +26,72 @@ class PlannedScene:
 
     @staticmethod
     def _extract_visual_hint(text: str) -> str:
-        """Derives semantic visual context and search keywords from narration text."""
-        lower = text.lower()
+        """
+        Derives high-fidelity semantic visual context and b-roll prompt from narration text.
+        Identifies specific subjects, environments, actions, and atmosphere so AI image engines
+        generate imagery strictly reflecting the scene narration.
+        """
+        lower = text.lower().strip()
 
-        # Check for numerical / data patterns
-        if re.search(r"\b(\d+%|\d+\s*(billion|million|k|thousand)|statistics|data|metric|growth)\b", lower):
-            return "modern analytics dashboard financial growth chart business technology"
+        # Remove conversational speech filler
+        clean_text = re.sub(
+            r"\b(in this video|welcome back|as you can see|let's look at|now let's|in addition|furthermore|first of all|to begin with|so basically|in fact|you see|for instance|for example)\b",
+            "",
+            lower,
+            flags=re.IGNORECASE,
+        ).strip()
 
-        # Check for AI / Coding / Tech
-        if any(w in lower for w in ["code", "software", "developer", "algorithm", "ai", "technology", "computer", "digital", "system"]):
-            return "software developer typing code dual monitors modern tech workspace"
+        # 1. Finance / Metrics / Data / Growth
+        if re.search(r"\b(\d+%|\d+\s*(billion|million|k|thousand)|statistics|data|metric|growth|revenue|stocks?|market|economy|forecast)\b", clean_text):
+            return "high-tech financial analytics command center glowing data visualization stock charts modern economics"
 
-        # Check for Nature / Travel / Planet
-        if any(w in lower for w in ["nature", "mountain", "ocean", "forest", "tree", "river", "sky", "earth", "environment"]):
-            return "majestic nature landscape aerial cinematic sunlight outdoors"
+        # 2. AI / Software / Coding / Cyber / Robotics
+        if any(w in clean_text for w in ["code", "software", "developer", "algorithm", "ai", "artificial intelligence", "neural", "technology", "computer", "digital", "system", "cloud", "server", "robot"]):
+            return "software engineer typing code modern dual monitor workstation glowing futuristic dark mode interface"
 
-        # Check for Business / Teamwork / Innovation
-        if any(w in lower for w in ["team", "meeting", "collaborate", "office", "business", "company", "strategy", "vision"]):
-            return "creative team collaborating modern office brainstorming boardroom"
+        # 3. Nature / Mountains / Oceans / Wildlife / Astronomy / Earth
+        if any(w in clean_text for w in ["nature", "mountain", "ocean", "sea", "forest", "tree", "river", "sky", "earth", "planet", "wildlife", "animal", "sunset", "sunrise", "weather", "space", "galaxy", "stars"]):
+            return "breathtaking cinematic aerial drone shot majestic natural landscape golden hour sunlight 8k documentary"
 
-        # Check for Lifestyle / Health / Education
-        if any(w in lower for w in ["learn", "study", "read", "health", "exercise", "wellness", "life", "balance"]):
-            return "mindful lifestyle focus wellness clean natural morning light"
+        # 4. Food / Cooking / Culinary / Coffee / Dining
+        if any(w in clean_text for w in ["food", "cook", "chef", "kitchen", "recipe", "dish", "coffee", "baker", "baking", "restaurant", "meal", "taste", "flavor", "artisan"]):
+            return "close-up cinematic culinary preparation fresh artisan ingredients natural warm ambient kitchen lighting shallow depth of field"
 
-        # Fallback to key nouns and verbs
-        words = [w for w in re.findall(r"\b[a-zA-Z]{4,}\b", lower) if w not in {
-            "this", "that", "with", "from", "have", "been", "were", "what", "when", "where", "which", "there", "their"
-        }]
-        if words:
-            return " ".join(words[:4]) + " cinematic 4k"
-        return "creative modern dynamic cinematic background"
+        # 5. Architecture / Cities / Urban / Travel / Real Estate
+        if any(w in clean_text for w in ["city", "street", "building", "architecture", "urban", "skyline", "traffic", "tokyo", "new york", "travel", "flight", "airport", "hotel", "house", "home"]):
+            return "sweeping cinematic wide shot modern metropolitan skyline architectural glass reflections golden hour"
+
+        # 6. Healthcare / Medicine / Science / Biology
+        if any(w in clean_text for w in ["health", "medical", "doctor", "hospital", "patient", "cure", "science", "laboratory", "microscope", "research", "vaccine", "dna"]):
+            return "clean high-tech modern medical laboratory scientist researching clinical equipment bright pristine environment"
+
+        # 7. Business / Teamwork / Leadership / Collaboration
+        if any(w in clean_text for w in ["team", "meeting", "collaborate", "office", "business", "company", "strategy", "vision", "startup", "partner", "leader"]):
+            return "diverse professional team collaborating modern creative architectural boardroom sunlight brainstorming"
+
+        # 8. Education / Learning / Books / History
+        if any(w in clean_text for w in ["learn", "study", "student", "school", "university", "book", "read", "library", "history", "knowledge"]):
+            return "warm sunlit academic library students studying open books intellectual focused atmosphere cinematic"
+
+        # 9. Wellness / Fitness / Sports / Lifestyle
+        if any(w in clean_text for w in ["fitness", "workout", "gym", "run", "sport", "athlete", "exercise", "wellness", "meditation", "yoga", "balance"]):
+            return "energetic athletic training dynamic motion natural sunlight outdoor athletic b-roll inspirational"
+
+        # Heuristic Content Extraction: Extract salient nouns, verbs, adjectives
+        meaningful_words = [
+            w for w in re.findall(r"\b[a-zA-Z]{3,}\b", clean_text)
+            if w not in {
+                "this", "that", "with", "from", "have", "been", "were", "what", "when", "where",
+                "which", "there", "their", "about", "could", "would", "should", "these", "those",
+                "into", "over", "after", "before", "while", "during", "then", "just", "also", "very"
+            }
+        ]
+
+        if len(meaningful_words) >= 2:
+            subject_phrase = " ".join(meaningful_words[:6])
+            return f"{subject_phrase} cinematic photorealistic film shot 8k"
+
+        return "modern dynamic cinematic film b-roll visual crisp lighting"
 
 
 class ScenePlanner:
