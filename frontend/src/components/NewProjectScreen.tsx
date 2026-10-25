@@ -30,15 +30,11 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
   onCancel,
 }) => {
   const [inputMode, setInputMode] = useState<"script" | "audio">("script");
-  const [projectName, setProjectName] = useState("Modern Innovation B-Roll");
-  const [scriptText, setScriptText] = useState(
-    "Artificial intelligence is transforming creative video production. " +
-    "Automated pipelines analyze spoken narration and curate matching cinematic visuals instantly. " +
-    "Over eighty percent of digital teams now leverage intelligent automation for high-impact storytelling."
-  );
+  const [projectName, setProjectName] = useState("");
+  const [scriptText, setScriptText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("en-US-AriaNeural");
   const [aspectRatios, setAspectRatios] = useState<string[]>(["16:9"]);
-  const [stylePrompt, setStylePrompt] = useState("bright, modern, cinematic real-world tech and architecture");
+  const [stylePrompt, setStylePrompt] = useState("bright, modern, cinematic real-world footage");
   const [avoidTags, setAvoidTags] = useState<string[]>(["realistic generated faces", "blurry footage"]);
   const [tagInput, setTagInput] = useState("");
   const [burnInCaptions, setBurnInCaptions] = useState(true);
@@ -219,7 +215,53 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
 
           {inputMode === "script" ? (
             <div className="space-y-4">
-              <div className="relative">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Narration Script Text
+                  </label>
+                  <div className="flex items-center space-x-2 text-[11px]">
+                    <span className="text-slate-500 hidden sm:inline">Templates:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjectName("NextGen AI & Cloud Infrastructure");
+                        setScriptText(
+                          "Artificial intelligence is transforming creative video production. " +
+                          "Automated pipelines analyze spoken narration and curate matching cinematic visuals instantly. " +
+                          "Over eighty percent of digital teams now leverage intelligent automation for high-impact storytelling."
+                        );
+                      }}
+                      className="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-accent-lime border border-surface-750 transition"
+                    >
+                      Tech Sample
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjectName("Market Analytics & Forecasting");
+                        setScriptText(
+                          "Over 78% of enterprise decision-makers prioritize data-driven forecasting. " +
+                          "When markets fluctuate unpredictably, clarity emerges from disciplined observation. " +
+                          "Resilient organizations adapt faster, turning analytical depth into measurable momentum."
+                        );
+                      }}
+                      className="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-accent-cyan border border-surface-750 transition"
+                    >
+                      Data Sample
+                    </button>
+                    {scriptText && (
+                      <button
+                        type="button"
+                        onClick={() => setScriptText("")}
+                        className="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-slate-400 hover:text-rose-400 border border-surface-750 transition"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <textarea
                   rows={6}
                   value={scriptText}
