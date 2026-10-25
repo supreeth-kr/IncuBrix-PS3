@@ -7,13 +7,27 @@ import { ProcessingScreen } from "./components/ProcessingScreen";
 import { ResultsScreen } from "./components/ResultsScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { CreateJobPayload, Job, Scene, SystemStatus } from "./types/api";
-import { createJob, fetchJob, fetchJobs, fetchReadiness, fetchScenes, replaceScene, uploadAudioJob } from "./api/client";
+import {
+  createJob,
+  deleteJob,
+  emptyTrash,
+  fetchJob,
+  fetchJobs,
+  fetchReadiness,
+  fetchScenes,
+  fetchTrash,
+  permanentDeleteJob,
+  replaceScene,
+  restoreJob,
+  uploadAudioJob,
+} from "./api/client";
 
 type Screen = "dashboard" | "new" | "editor" | "processing" | "results" | "settings";
 
 export const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>("dashboard");
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [trashJobs, setTrashJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState<boolean>(true);
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [activeScenes, setActiveScenes] = useState<Scene[]>([]);
@@ -27,15 +41,19 @@ export const App: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1. Initial Load: Jobs and Engine Readiness
+  // 1. Initial Load: Jobs, Trash, and Engine Readiness
   const loadInitialData = async () => {
     try {
-      const [jobsData, readyData] = await Promise.allSettled([
+      const [jobsData, trashData, readyData] = await Promise.allSettled([
         fetchJobs(),
+        fetchTrash(),
         fetchReadiness(),
       ]);
       if (jobsData.status === "fulfilled") {
         setJobs(jobsData.value);
+      }
+      if (trashData.status === "fulfilled") {
+        setTrashJobs(trashData.value);
       }
       if (readyData.status === "fulfilled") {
         setSystemStatus(readyData.value);
@@ -123,6 +141,54 @@ export const App: React.FC = () => {
     showToast(`Scene #${updated.scene_index + 1} updated successfully!`);
   };
 
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const res = await deleteJob(jobId);
+      const deletedJob = jobs.find((j) => j.job_id === jobId);
+      setJobs((prev) => prev.filter((j) => j.job_id !== jobId));
+      if (deletedJob) {
+        setTrashJobs((prev) => [
+          { ...deletedJob, is_deleted: true, days_remaining: res.days_remaining },
+          ...prev,
+        ]);
+      }
+      showToast("Project moved to Trash (retained for 30 days).");
+    } catch (e: any) {
+      showToast(e.message || "Failed to move project to trash.");
+    }
+  };
+
+  const handleRestoreJob = async (jobId: string) => {
+    try {
+      const restored = await restoreJob(jobId);
+      setTrashJobs((prev) => prev.filter((j) => j.job_id !== jobId));
+      setJobs((prev) => [restored, ...prev]);
+      showToast("Project restored to active library.");
+    } catch (e: any) {
+      showToast(e.message || "Failed to restore project.");
+    }
+  };
+
+  const handlePermanentDeleteJob = async (jobId: string) => {
+    try {
+      await permanentDeleteJob(jobId);
+      setTrashJobs((prev) => prev.filter((j) => j.job_id !== jobId));
+      showToast("Project permanently erased.");
+    } catch (e: any) {
+      showToast(e.message || "Failed to permanently delete project.");
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    try {
+      const res = await emptyTrash();
+      setTrashJobs([]);
+      showToast(`Trash emptied (${res.purged_count} projects permanently removed).`);
+    } catch (e: any) {
+      showToast(e.message || "Failed to empty trash.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col font-sans">
       {/* Toast Notification */}
@@ -145,10 +211,15 @@ export const App: React.FC = () => {
         {currentScreen === "dashboard" && (
           <DashboardScreen
             jobs={jobs}
+            trashJobs={trashJobs}
             loading={loadingJobs}
             onSelectJob={handleSelectJob}
             onCreateNew={() => setCurrentScreen("new")}
             onRefresh={loadInitialData}
+            onDeleteJob={handleDeleteJob}
+            onRestoreJob={handleRestoreJob}
+            onPermanentDeleteJob={handlePermanentDeleteJob}
+            onEmptyTrash={handleEmptyTrash}
           />
         )}
 

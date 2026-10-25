@@ -164,6 +164,7 @@ class JobWorker:
                     style=job.style,
                     avoid=job.avoid or [],
                     work_dir=job_dir,
+                    visual_source=job.visual_source or "ai_images",
                 )
 
                 # Persist scenes in DB
@@ -373,11 +374,14 @@ class JobWorker:
                     "end_time": scene.end_time,
                     "duration": scene.duration,
                     "visual_hint": search_query,
+                    "provider": provider_name,
                 }],
                 aspect_ratio=aspect,
                 style=job.style,
                 avoid=job.avoid or [],
                 work_dir=job_dir,
+                visual_source="ai_images" if provider_name == "ai_image_generator" else (job.visual_source or "ai_images"),
+                preferred_provider=provider_name,
             )
             sc_info = new_selected[0]
 
@@ -392,6 +396,7 @@ class JobWorker:
             scene.attribution = sc_info["attribution"]
             scene.commercial_use_status = sc_info["commercial_use_status"]
             scene.rights_verified = sc_info["rights_verified"]
+            scene.ai_generated = sc_info.get("ai_generated", False)
             scene.selection_reason = f"Replaced by user request: {sc_info['selection_reason']}"
             scene.relevance_score = sc_info["relevance_score"]
             scene.visual_hint = search_query

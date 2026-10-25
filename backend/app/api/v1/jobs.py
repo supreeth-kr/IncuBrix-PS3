@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 import json
 import os
 import shutil
@@ -36,6 +37,13 @@ def format_job_response(job: Job, scene_count: int = 0) -> JobResponse:
             "details": job.error_details or {},
         }
 
+    days_remaining = None
+    if getattr(job, "is_deleted", False) and job.deleted_at:
+        now = datetime.now(timezone.utc)
+        d_at = job.deleted_at if job.deleted_at.tzinfo else job.deleted_at.replace(tzinfo=timezone.utc)
+        elapsed_days = (now - d_at).days
+        days_remaining = max(0, 30 - elapsed_days)
+
     return JobResponse(
         job_id=job.id,
         project_name=job.project_name,
@@ -46,6 +54,10 @@ def format_job_response(job: Job, scene_count: int = 0) -> JobResponse:
         completed_at=job.completed_at,
         aspect_ratios=job.aspect_ratios or ["16:9"],
         scene_count=scene_count,
+        visual_source=getattr(job, "visual_source", "ai_images") or "ai_images",
+        is_deleted=bool(getattr(job, "is_deleted", False)),
+        deleted_at=job.deleted_at,
+        days_remaining=days_remaining,
         result_urls=job.output_files or {},
         warnings=job.warnings or [],
         error=err_dict,
@@ -96,6 +108,7 @@ async def create_broll_job(
         aspect_ratios=req.aspect_ratios,
         style=req.style,
         avoid=req.avoid,
+        visual_source=req.visual_source or "ai_images",
         captions_config=req.captions.model_dump(),
         callback_url=req.callback_url,
     )
@@ -123,6 +136,7 @@ async def create_broll_job_with_audio_upload(
     aspect_ratios: str = Form('["16:9"]'),
     style: str = Form("bright, modern, real-world footage"),
     avoid: str = Form("[]"),
+    visual_source: str = Form("ai_images"),
     burn_in_captions: bool = Form(True),
     callback_url: Optional[str] = Form(None),
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
@@ -184,6 +198,7 @@ async def create_broll_job_with_audio_upload(
         aspect_ratios=ratios_list,
         style=style,
         avoid=avoid_list,
+        visual_source=visual_source,
         captions_config={"burn_in": burn_in_captions, "srt": True},
         callback_url=callback_url,
     )
@@ -196,19 +211,168 @@ async def create_broll_job_with_audio_upload(
     return format_job_response(job, 0)
 
 
-@router.get("/jobs", response_model=List[JobResponse], summary="List all jobs")
+@router.get("/jobs", response_model=List[JobResponse], summary="List all active jobs")
 async def list_jobs(
     limit: int = 50,
     status_filter: Optional[str] = None,
+    include_deleted: bool = False,
     db: AsyncSession = Depends(get_db),
 ) -> List[JobResponse]:
-    """Lists recent jobs with status, duration, and metadata for Studio Dashboard."""
+    """Lists recent active jobs with status, duration, and metadata for Studio Dashboard."""
     stmt = select(Job).order_by(desc(Job.created_at)).limit(limit)
+    if not include_deleted:
+        stmt = stmt.where(Job.is_deleted == False)
     if status_filter:
         stmt = stmt.where(Job.status == status_filter)
     res = await db.execute(stmt)
     jobs = res.scalars().all()
     return [format_job_response(j, len(j.scenes) if j.scenes else 0) for j in jobs]
+
+
+@router.delete("/jobs/{job_id}", summary="Move Job to Trash (Soft Delete for 30 Days)")
+async def delete_job(
+    job_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Soft-deletes a project and moves it to the Trash.
+    The project is retained in the trash for 30 days before permanent deletion.
+    """
+    stmt = select(Job).where(Job.id == job_id)
+    res = await db.execute(stmt)
+    job = res.scalars().first()
+    if not job:
+        raise AppException(status_code=404, code="JOB_NOT_FOUND", message=f"Job '{job_id}' not found.")
+
+    job.is_deleted = True
+    job.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    logger.info(f"Job {job_id} moved to trash (30-day retention countdown started).")
+
+    return {
+        "message": "Project moved to trash. Stored for 30 days before permanent deletion.",
+        "job_id": job_id,
+        "days_remaining": 30,
+    }
+
+
+@router.post("/jobs/{job_id}/restore", response_model=JobResponse, summary="Restore Job from Trash")
+async def restore_job(
+    job_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> JobResponse:
+    """Restores a soft-deleted project from trash back to active dashboard."""
+    stmt = select(Job).where(Job.id == job_id)
+    res = await db.execute(stmt)
+    job = res.scalars().first()
+    if not job:
+        raise AppException(status_code=404, code="JOB_NOT_FOUND", message=f"Job '{job_id}' not found.")
+
+    job.is_deleted = False
+    job.deleted_at = None
+    await db.commit()
+    await db.refresh(job)
+    logger.info(f"Job {job_id} restored from trash.")
+
+    stmt_sc = select(Scene).where(Scene.job_id == job_id)
+    res_sc = await db.execute(stmt_sc)
+    scenes = res_sc.scalars().all()
+    return format_job_response(job, len(scenes))
+
+
+@router.delete("/jobs/{job_id}/permanent", summary="Permanently Delete Job and Storage Files")
+async def permanently_delete_job(
+    job_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Permanently purges a job and all its generated files from storage and database."""
+    stmt = select(Job).where(Job.id == job_id)
+    res = await db.execute(stmt)
+    job = res.scalars().first()
+    if not job:
+        raise AppException(status_code=404, code="JOB_NOT_FOUND", message=f"Job '{job_id}' not found.")
+
+    storage = get_storage()
+    job_dir = storage.get_job_dir(job_id)
+    if os.path.exists(job_dir):
+        try:
+            shutil.rmtree(job_dir, ignore_errors=True)
+        except Exception as e:
+            logger.warning(f"Error removing storage for job {job_id}: {e}")
+
+    await db.delete(job)
+    await db.commit()
+    logger.info(f"Job {job_id} and its storage permanently purged.")
+
+    return {
+        "message": f"Project '{job_id}' permanently deleted.",
+        "job_id": job_id,
+    }
+
+
+@router.get("/trash", response_model=List[JobResponse], summary="List Deleted Projects in Trash (30 Days)")
+async def list_trash(
+    db: AsyncSession = Depends(get_db),
+) -> List[JobResponse]:
+    """
+    Lists soft-deleted projects in trash with countdown of days remaining (up to 30 days).
+    Automatically purges any projects whose retention period has expired (> 30 days).
+    """
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=30)
+
+    # 1. Check and permanently purge expired items (> 30 days old)
+    stmt_expired = select(Job).where(Job.is_deleted == True, Job.deleted_at < cutoff)
+    res_expired = await db.execute(stmt_expired)
+    expired_jobs = res_expired.scalars().all()
+    storage = get_storage()
+    for exp_job in expired_jobs:
+        job_dir = storage.get_job_dir(exp_job.id)
+        if os.path.exists(job_dir):
+            try:
+                shutil.rmtree(job_dir, ignore_errors=True)
+            except Exception:
+                pass
+        await db.delete(exp_job)
+    if expired_jobs:
+        await db.commit()
+        logger.info(f"Auto-purged {len(expired_jobs)} expired jobs from trash.")
+
+    # 2. Return remaining items in trash
+    stmt_trash = select(Job).where(Job.is_deleted == True).order_by(desc(Job.deleted_at))
+    res_trash = await db.execute(stmt_trash)
+    trash_jobs = res_trash.scalars().all()
+
+    return [format_job_response(j, len(j.scenes) if j.scenes else 0) for j in trash_jobs]
+
+
+@router.post("/trash/empty", summary="Empty Trash (Permanently Purge All Soft-Deleted Projects)")
+async def empty_trash(
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Permanently deletes all projects currently in the Trash."""
+    stmt = select(Job).where(Job.is_deleted == True)
+    res = await db.execute(stmt)
+    trash_jobs = res.scalars().all()
+
+    storage = get_storage()
+    count = 0
+    for j in trash_jobs:
+        job_dir = storage.get_job_dir(j.id)
+        if os.path.exists(job_dir):
+            try:
+                shutil.rmtree(job_dir, ignore_errors=True)
+            except Exception:
+                pass
+        await db.delete(j)
+        count += 1
+
+    await db.commit()
+    logger.info(f"Emptied trash: permanently deleted {count} projects.")
+    return {
+        "message": f"Successfully emptied trash. Permanently purged {count} project(s).",
+        "purged_count": count,
+    }
 
 
 @router.get("/jobs/{job_id}", response_model=JobResponse, summary="Get Job Status and Details")

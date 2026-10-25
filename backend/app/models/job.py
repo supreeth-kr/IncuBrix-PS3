@@ -33,6 +33,9 @@ class Job(Base):
         JSON, default=lambda: {"burn_in": True, "srt": True}
     )
     callback_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    visual_source: Mapped[str] = mapped_column(String(64), default="ai_images")
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     error_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

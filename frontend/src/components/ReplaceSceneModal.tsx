@@ -106,9 +106,10 @@ export const ReplaceSceneModal: React.FC<ReplaceSceneModalProps> = ({
               onChange={(e) => setProvider(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-surface-950 border border-surface-800 rounded-xl text-xs text-slate-200 focus:border-accent-lime transition"
             >
-              <option value="auto">Auto-Select (Pexels &rarr; Pixabay &rarr; Fallback)</option>
-              <option value="pexels">Pexels Stock API</option>
-              <option value="pixabay">Pixabay Stock API</option>
+              <option value="auto">Auto-Select (AI Visuals &rarr; Stock Footage)</option>
+              <option value="ai_image_generator">✦ IncuBrix AI Generative Diffusion Engine</option>
+              <option value="pexels">Pexels Stock Video API</option>
+              <option value="pixabay">Pixabay Stock Video API</option>
               <option value="local_fallback">IncuBrix Procedural Fallback Engine</option>
             </select>
           </div>

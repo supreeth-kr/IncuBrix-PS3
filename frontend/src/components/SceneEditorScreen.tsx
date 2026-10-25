@@ -236,9 +236,16 @@ export const SceneEditorScreen: React.FC<SceneEditorScreenProps> = ({
                       <span className="font-mono">
                         {scene.start_time.toFixed(1)}s &bull; {scene.duration.toFixed(1)}s
                       </span>
-                      <span className="capitalize text-[11px] px-2 py-0.5 rounded bg-surface-950 text-slate-300 border border-surface-800">
-                        {scene.source_provider.replace("_", " ")}
-                      </span>
+                      <div className="flex items-center space-x-1">
+                        {scene.ai_generated && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
+                            ✦ AI Visual
+                          </span>
+                        )}
+                        <span className="capitalize text-[11px] px-2 py-0.5 rounded bg-surface-950 text-slate-300 border border-surface-800">
+                          {scene.source_provider.replace("_", " ")}
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed">

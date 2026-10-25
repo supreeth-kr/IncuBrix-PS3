@@ -41,6 +41,10 @@ class CreateJobRequest(BaseModel):
         default="Untitled Video Project",
         description="Human-friendly project title",
     )
+    visual_source: str = Field(
+        default="ai_images",
+        description="Preferred visual footage source: 'ai_images', 'stock_footage', or 'auto'",
+    )
     callback_url: Optional[str] = Field(
         None,
         description="Optional webhook URL to notify on job completion",
@@ -68,7 +72,8 @@ class CreateJobRequest(BaseModel):
 class ReplaceSceneRequest(BaseModel):
     query: Optional[str] = Field(None, description="Search query or keyword override")
     visual_hint: Optional[str] = Field(None, description="Visual description override")
-    provider: Optional[str] = Field(None, description="Preferred footage provider ('pexels', 'pixabay', 'local_fallback')")
+    ai_prompt: Optional[str] = Field(None, description="Prompt for AI image generation")
+    provider: Optional[str] = Field(None, description="Preferred footage provider ('ai_image_generator', 'pexels', 'pixabay', 'local_fallback')")
     custom_media_url: Optional[str] = Field(None, description="Direct URL to custom video/image clip")
     rerender: bool = Field(default=True, description="Whether to trigger video rerendering immediately")
 
@@ -83,6 +88,10 @@ class JobResponse(BaseModel):
     completed_at: Optional[datetime] = None
     aspect_ratios: List[str]
     scene_count: int = 0
+    visual_source: str = "ai_images"
+    is_deleted: bool = False
+    deleted_at: Optional[datetime] = None
+    days_remaining: Optional[int] = None
     result_urls: Dict[str, Optional[str]] = Field(default_factory=dict)
     warnings: List[str] = Field(default_factory=list)
     error: Optional[ErrorDetail] = None

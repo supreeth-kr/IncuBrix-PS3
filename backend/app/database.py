@@ -44,6 +44,22 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+from sqlalchemy import text
+
+
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migrate existing SQLite tables if new columns are missing
+        if "sqlite" in settings.DATABASE_URL:
+            try:
+                res = await conn.execute(text("PRAGMA table_info(jobs)"))
+                columns = {row[1] for row in res.fetchall()}
+                if "is_deleted" not in columns:
+                    await conn.execute(text("ALTER TABLE jobs ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
+                if "deleted_at" not in columns:
+                    await conn.execute(text("ALTER TABLE jobs ADD COLUMN deleted_at DATETIME DEFAULT NULL"))
+                if "visual_source" not in columns:
+                    await conn.execute(text("ALTER TABLE jobs ADD COLUMN visual_source VARCHAR(64) DEFAULT 'ai_images'"))
+            except Exception:
+                pass

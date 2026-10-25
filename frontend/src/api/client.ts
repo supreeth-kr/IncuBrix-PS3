@@ -85,3 +85,53 @@ export async function fetchReadiness(): Promise<SystemStatus> {
   const res = await fetch("/ready");
   return res.json();
 }
+
+export async function deleteJob(jobId: string): Promise<{ message: string; job_id: string; days_remaining: number }> {
+  const res = await fetch(`${BASE_URL}/jobs/${jobId}`, {
+    method: "DELETE",
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to move project to trash");
+  }
+  return data;
+}
+
+export async function restoreJob(jobId: string): Promise<Job> {
+  const res = await fetch(`${BASE_URL}/jobs/${jobId}/restore`, {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to restore project");
+  }
+  return data;
+}
+
+export async function permanentDeleteJob(jobId: string): Promise<{ message: string; job_id: string }> {
+  const res = await fetch(`${BASE_URL}/jobs/${jobId}/permanent`, {
+    method: "DELETE",
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to permanently delete project");
+  }
+  return data;
+}
+
+export async function fetchTrash(): Promise<Job[]> {
+  const res = await fetch(`${BASE_URL}/trash`);
+  if (!res.ok) throw new Error("Failed to load trash projects");
+  return res.json();
+}
+
+export async function emptyTrash(): Promise<{ message: string; purged_count: number }> {
+  const res = await fetch(`${BASE_URL}/trash/empty`, {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Failed to empty trash");
+  }
+  return data;
+}

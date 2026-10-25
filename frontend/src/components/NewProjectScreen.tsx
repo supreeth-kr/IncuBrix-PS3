@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, Mic, Upload, Sparkles, Check, AlertCircle, X, Shield, Film, Smartphone, Square } from "lucide-react";
+import { FileText, Mic, Upload, Sparkles, Check, AlertCircle, X, Shield, Film, Smartphone, Square, Zap } from "lucide-react";
 import { CreateJobPayload } from "../types/api";
 
 interface NewProjectScreenProps {
@@ -34,6 +34,7 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
   const [scriptText, setScriptText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("en-US-AriaNeural");
   const [aspectRatios, setAspectRatios] = useState<string[]>(["16:9"]);
+  const [visualSource, setVisualSource] = useState<"ai_images" | "stock_footage" | "auto">("ai_images");
   const [stylePrompt, setStylePrompt] = useState("bright, modern, cinematic real-world footage");
   const [avoidTags, setAvoidTags] = useState<string[]>(["realistic generated faces", "blurry footage"]);
   const [tagInput, setTagInput] = useState("");
@@ -123,6 +124,7 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
           aspect_ratios: aspectRatios,
           style: stylePrompt,
           avoid: avoidTags,
+          visual_source: visualSource,
           captions: {
             burn_in: burnInCaptions,
             srt: exportSrt,
@@ -141,6 +143,7 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
         formData.append("aspect_ratios", JSON.stringify(aspectRatios));
         formData.append("style", stylePrompt);
         formData.append("avoid", JSON.stringify(avoidTags));
+        formData.append("visual_source", visualSource);
         formData.append("burn_in_captions", String(burnInCaptions));
         await onSubmitAudio(formData);
       }
@@ -386,6 +389,81 @@ export const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
                   <div>
                     <h4 className="font-semibold text-sm text-white">{opt.label}</h4>
                     <p className="text-[11px] text-slate-400 mt-0.5">{opt.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Visual Footage Source Selection */}
+        <div className="p-5 rounded-2xl bg-surface-900 border border-surface-800 shadow-card space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Visual Footage Engine
+            </label>
+            <span className="text-[11px] text-accent-lime font-medium flex items-center space-x-1">
+              <Sparkles className="w-3 h-3" />
+              <span>AI Diffusion + Motion Rendering</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                id: "ai_images",
+                title: "AI Generated Images",
+                badge: "Recommended",
+                desc: "Synthesizes custom photorealistic visuals for each scene according to your script, animated into 30fps motion B-roll.",
+                icon: Sparkles,
+              },
+              {
+                id: "stock_footage",
+                title: "Stock Video Clips",
+                badge: "Pexels & Pixabay",
+                desc: "Discovers and downloads commercial stock video footage matching script keywords and timestamps.",
+                icon: Film,
+              },
+              {
+                id: "auto",
+                title: "Auto Hybrid Engine",
+                badge: "Smart Mix",
+                desc: "Balances stock footage discovery with generative AI visuals for maximum scene relevance.",
+                icon: Zap,
+              },
+            ].map((opt) => {
+              const selected = visualSource === opt.id;
+              const Icon = opt.icon;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setVisualSource(opt.id as any)}
+                  className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition ${
+                    selected
+                      ? "bg-surface-850 border-accent-lime text-white shadow-glow"
+                      : "bg-surface-950 border-surface-800 text-slate-400 hover:border-surface-700"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Icon className={`w-5 h-5 ${selected ? "text-accent-lime" : "text-slate-400"}`} />
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-800 text-slate-300 font-medium">
+                          {opt.badge}
+                        </span>
+                      </div>
+                      <div
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                          selected
+                            ? "bg-accent-lime border-accent-lime text-surface-950"
+                            : "border-surface-700"
+                        }`}
+                      >
+                        {selected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+                    </div>
+                    <h4 className="font-semibold text-sm text-white mb-1">{opt.title}</h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{opt.desc}</p>
                   </div>
                 </div>
               );

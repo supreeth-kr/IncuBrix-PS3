@@ -2,6 +2,7 @@ import os
 from typing import Dict, List, Optional, Set
 from app.config import get_settings
 from app.core.logging import get_logger
+from app.providers.ai_image_provider import AIImageProvider
 from app.providers.base import BaseFootageProvider, FootageAsset
 from app.providers.fallback_provider import FallbackProvider
 from app.providers.pexels_provider import PexelsProvider
@@ -13,15 +14,20 @@ settings = get_settings()
 
 class FootageSelector:
     def __init__(self, providers: Optional[List[BaseFootageProvider]] = None):
+        self.ai_provider = AIImageProvider()
+        self.pexels = PexelsProvider()
+        self.pixabay = PixabayProvider()
+        self.fallback = FallbackProvider()
+
         if providers is not None:
             self.providers = providers
         else:
             self.providers = [
-                PexelsProvider(),
-                PixabayProvider(),
-                FallbackProvider(),
+                self.ai_provider,
+                self.pexels,
+                self.pixabay,
+                self.fallback,
             ]
-        self.fallback = FallbackProvider()
 
     async def select_for_scenes(
         self,
@@ -30,25 +36,49 @@ class FootageSelector:
         style: str,
         avoid: List[str],
         work_dir: str,
+        visual_source: str = "ai_images",
+        preferred_provider: Optional[str] = None,
     ) -> List[Dict[str, any]]:
         """
-        Selects and downloads footage for all scenes.
+        Selects and downloads footage for all scenes based on script narration.
+        Prioritizes AI generated images when visual_source is 'ai_images'.
         Prevents duplicate footage across the video.
         Ensures each scene has an asset file downloaded/generated.
         """
         used_clip_ids: Set[str] = set()
         results: List[Dict[str, any]] = []
 
+        # Determine provider search order
+        if preferred_provider:
+            ordered_providers = [p for p in self.providers if p.provider_name == preferred_provider]
+            ordered_providers += [p for p in self.providers if p.provider_name != preferred_provider]
+        elif visual_source == "stock_footage":
+            ordered_providers = [self.pexels, self.pixabay, self.fallback, self.ai_provider]
+        elif visual_source == "ai_images":
+            ordered_providers = [self.ai_provider, self.pexels, self.pixabay, self.fallback]
+        else:  # "auto"
+            # If stock keys are configured, try stock first, otherwise AI images
+            if self.pexels.is_configured() or self.pixabay.is_configured():
+                ordered_providers = [self.pexels, self.pixabay, self.ai_provider, self.fallback]
+            else:
+                ordered_providers = [self.ai_provider, self.pexels, self.pixabay, self.fallback]
+
         for scene in scenes:
             text = scene.get("narration_text", "")
             hint = scene.get("visual_hint", "")
             dur = scene.get("duration", 4.0)
             idx = scene.get("scene_index", 0)
+            scene_preferred_prov = scene.get("provider")
+
+            scene_providers = ordered_providers
+            if scene_preferred_prov:
+                scene_providers = [p for p in self.providers if p.provider_name == scene_preferred_prov]
+                scene_providers += [p for p in self.providers if p.provider_name != scene_preferred_prov]
 
             chosen_asset: Optional[FootageAsset] = None
 
-            # 1. Try configured external providers first
-            for provider in self.providers:
+            # 1. Search candidate providers in order
+            for provider in scene_providers:
                 if provider.provider_name == "local_fallback":
                     continue
                 if not provider.is_configured():

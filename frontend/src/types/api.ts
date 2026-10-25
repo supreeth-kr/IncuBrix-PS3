@@ -17,6 +17,10 @@ export interface Job {
   completed_at?: string | null;
   aspect_ratios: string[];
   scene_count: number;
+  visual_source?: string;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  days_remaining?: number | null;
   result_urls: Record<string, string>;
   warnings: string[];
   error?: ErrorDetail | null;
@@ -53,6 +57,7 @@ export interface CreateJobPayload {
   aspect_ratios: string[];
   style: string;
   avoid: string[];
+  visual_source?: string;
   captions: {
     burn_in: boolean;
     srt: boolean;
@@ -64,6 +69,7 @@ export interface CreateJobPayload {
 export interface ReplaceScenePayload {
   query?: string;
   visual_hint?: string;
+  ai_prompt?: string;
   provider?: string;
   custom_media_url?: string;
   rerender: boolean;
