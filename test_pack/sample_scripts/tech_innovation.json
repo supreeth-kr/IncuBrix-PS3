@@ -1,0 +1,12 @@
+{
+  "project_name": "NextGen AI & Cloud Infrastructure",
+  "script": "Next-generation artificial intelligence requires resilient distributed cloud architecture. High-throughput data pipelines process millions of events per second with sub-millisecond latency. Modern engineering teams harness these capabilities to build transformative customer experiences globally.",
+  "voice": "en-US-AriaNeural",
+  "aspect_ratios": ["16:9"],
+  "style": "clean modern technical server infrastructure",
+  "avoid": ["grainy low-res footage", "cluttered text overlays"],
+  "captions": {
+    "burn_in": true,
+    "srt": true
+  }
+}

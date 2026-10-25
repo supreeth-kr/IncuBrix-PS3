@@ -1,0 +1,12 @@
+{
+  "project_name": "Mobile Creator Growth Reel",
+  "script": "Attention spans are shorter than ever before. If your opening two seconds do not hook the viewer, they swipe away instantly. Master dynamic pacing, clear captions, and punchy visual contrast to build an engaged following.",
+  "voice": "en-IN-NeerjaNeural",
+  "aspect_ratios": ["9:16"],
+  "style": "vibrant portrait smartphone creator lifestyle",
+  "avoid": ["horizontal letterboxing", "tiny unreadable text"],
+  "captions": {
+    "burn_in": true,
+    "srt": true
+  }
+}

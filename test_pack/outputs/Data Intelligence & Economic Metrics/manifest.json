@@ -1,0 +1,91 @@
+{
+  "application_version": "1.0.0",
+  "job_id": "e4d3ad15-699e-4f00-bea6-a078408659f5",
+  "project_name": "Data Intelligence & Economic Metrics",
+  "providers": {
+    "tts": "EdgeTTS (Microsoft Neural Voices) + Local Synth Fallback",
+    "footage": "Pexels API, Pixabay API, IncuBrix Procedural Fallback Engine",
+    "renderer": "FFmpeg 9.0 (H.264 / AAC / 30fps)",
+    "transcription": "FFprobe Inspector / Fallback Aligner"
+  },
+  "models": {
+    "voice_model": "en-US-GuyNeural",
+    "encoding": "libx264 (crf 20-22, yuv420p)"
+  },
+  "settings": {
+    "voice": "en-US-GuyNeural",
+    "style": "clean minimalist business analytics charts dark surface",
+    "avoid": [],
+    "captions": {
+      "burn_in": true,
+      "srt": true
+    }
+  },
+  "output_aspect_ratios": [
+    "16:9"
+  ],
+  "processing_start_time": "2026-10-25T03:59:07.264643+00:00",
+  "processing_end_time": "2026-10-25T03:59:23.926170+00:00",
+  "measured_duration_seconds": 16.66,
+  "cost_estimate": {
+    "estimated_usd": 0.0,
+    "currency": "USD",
+    "basis": "Free Tier / Deterministic Local Pipeline (Zero API charges incurred)"
+  },
+  "warnings": [],
+  "fallback_usage": {
+    "fallback_clips_used": 3,
+    "external_clips_used": 0,
+    "fallback_ratio": 1.0
+  },
+  "rights_and_licensing_summary": {
+    "total_scenes": 3,
+    "commercial_use_permitted_scenes": 0,
+    "unverified_scenes": 0,
+    "ai_generated_scenes": 0,
+    "providers_used": [
+      "local_fallback"
+    ]
+  },
+  "output_files": {
+    "video_16x9": {
+      "filename": "video_16x9.mp4",
+      "file_path": "C:\\Users\\HAI\\OneDrive\\Pictures\\INCUBRIX\\storage\\jobs\\e4d3ad15-699e-4f00-bea6-a078408659f5\\video_16x9.mp4",
+      "aspect_ratio": "16:9",
+      "file_size_bytes": 1961069,
+      "duration_seconds": 17.366667,
+      "width": 1920,
+      "height": 1080,
+      "codec_video": "h264",
+      "codec_audio": "aac",
+      "fps": 30.0,
+      "download_url": "/api/v1/jobs/e4d3ad15-699e-4f00-bea6-a078408659f5/downloads/video_16x9.mp4"
+    },
+    "captions": {
+      "filename": "captions.srt",
+      "file_path": "C:\\Users\\HAI\\OneDrive\\Pictures\\INCUBRIX\\storage\\jobs\\e4d3ad15-699e-4f00-bea6-a078408659f5\\captions.srt",
+      "aspect_ratio": null,
+      "file_size_bytes": 359,
+      "duration_seconds": null,
+      "width": null,
+      "height": null,
+      "codec_video": null,
+      "codec_audio": null,
+      "fps": null,
+      "download_url": "/api/v1/jobs/e4d3ad15-699e-4f00-bea6-a078408659f5/downloads/captions.srt"
+    },
+    "timeline": {
+      "filename": "timeline.json",
+      "file_path": "C:\\Users\\HAI\\OneDrive\\Pictures\\INCUBRIX\\storage\\jobs\\e4d3ad15-699e-4f00-bea6-a078408659f5\\timeline.json",
+      "aspect_ratio": null,
+      "file_size_bytes": 2917,
+      "duration_seconds": null,
+      "width": null,
+      "height": null,
+      "codec_video": null,
+      "codec_audio": null,
+      "fps": null,
+      "download_url": "/api/v1/jobs/e4d3ad15-699e-4f00-bea6-a078408659f5/downloads/timeline.json"
+    }
+  }
+}

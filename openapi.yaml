@@ -1,0 +1,832 @@
+openapi: 3.1.0
+info:
+  title: IncuBrix Script & Voiceover to B-Roll Engine
+  description: Engine that turns written scripts or voiceovers into finished B-roll
+    videos.
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Health Check
+      description: Liveness probe indicating application process is running.
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health Check Health Get
+  /ready:
+    get:
+      tags:
+      - Health
+      summary: Readiness Check
+      description: 'Readiness probe validating database connectivity and FFmpeg availability.
+
+        Returns HTTP 200 if ready to accept traffic, 503 if a critical dependency
+        is unavailable.'
+      operationId: readiness_check_ready_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Readiness Check Ready Get
+  /api/v1/broll/jobs:
+    post:
+      tags:
+      - Jobs
+      summary: Submit B-Roll Video Generation Job
+      description: Submits a new video generation job. Returns HTTP 202 Accepted with
+        job ID.
+      operationId: create_broll_job_api_v1_broll_jobs_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/broll/jobs/upload:
+    post:
+      tags:
+      - Jobs
+      summary: Create B-Roll Video from Uploaded Audio File
+      description: Accepts MP3, WAV, or M4A audio upload and creates a B-roll video
+        job.
+      operationId: create_broll_job_with_audio_upload_api_v1_broll_jobs_upload_post
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_create_broll_job_with_audio_upload_api_v1_broll_jobs_upload_post'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs:
+    get:
+      tags:
+      - Jobs
+      summary: List all jobs
+      description: Lists recent jobs with status, duration, and metadata for Studio
+        Dashboard.
+      operationId: list_jobs_api_v1_jobs_get
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          title: Limit
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Filter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobResponse'
+                title: Response List Jobs Api V1 Jobs Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}:
+    get:
+      tags:
+      - Jobs
+      summary: Get Job Status and Details
+      description: Returns the current state, progress, and stage of a job.
+      operationId: get_job_api_v1_jobs__job_id__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/result:
+    get:
+      tags:
+      - Jobs
+      summary: Get Completed Job Result Links
+      description: Returns downloadable URLs and summary metrics for completed jobs.
+      operationId: get_job_result_api_v1_jobs__job_id__result_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Get Job Result Api V1 Jobs  Job Id  Result Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/timeline:
+    get:
+      tags:
+      - Jobs
+      summary: Get Scene Timeline JSON
+      operationId: get_job_timeline_api_v1_jobs__job_id__timeline_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/manifest:
+    get:
+      tags:
+      - Jobs
+      summary: Get Job Manifest JSON
+      operationId: get_job_manifest_api_v1_jobs__job_id__manifest_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/captions:
+    get:
+      tags:
+      - Jobs
+      summary: Download Captions (.srt)
+      operationId: get_job_captions_api_v1_jobs__job_id__captions_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/downloads/{filename}:
+    get:
+      tags:
+      - Jobs
+      summary: Stream or Download Media Asset
+      operationId: download_asset_api_v1_jobs__job_id__downloads__filename__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Filename
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/thumbnails/{filename}:
+    get:
+      tags:
+      - Jobs
+      summary: Get Scene Thumbnail
+      operationId: get_thumbnail_api_v1_jobs__job_id__thumbnails__filename__get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Filename
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/scenes:
+    get:
+      tags:
+      - Scenes
+      summary: List Scenes for a Job
+      description: Returns the ordered scene list with timing, narration text, and
+        footage metadata.
+      operationId: list_job_scenes_api_v1_jobs__job_id__scenes_get
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SceneResponse'
+                title: Response List Job Scenes Api V1 Jobs  Job Id  Scenes Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/jobs/{job_id}/scenes/{scene_id}/replace:
+    post:
+      tags:
+      - Scenes
+      summary: Replace Scene Visual Footage
+      description: 'Replaces a specific scene''s visual footage and optionally rerenders
+        the finished video.
+
+        Preserves all other scenes and audio.'
+      operationId: replace_scene_api_v1_jobs__job_id__scenes__scene_id__replace_post
+      parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Job Id
+      - name: scene_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Scene Id
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceSceneRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SceneResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    Body_create_broll_job_with_audio_upload_api_v1_broll_jobs_upload_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+        project_name:
+          type: string
+          title: Project Name
+          default: Audio Voiceover Project
+        script:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Script
+        aspect_ratios:
+          type: string
+          title: Aspect Ratios
+          default: '["16:9"]'
+        style:
+          type: string
+          title: Style
+          default: bright, modern, real-world footage
+        avoid:
+          type: string
+          title: Avoid
+          default: '[]'
+        burn_in_captions:
+          type: boolean
+          title: Burn In Captions
+          default: true
+        callback_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Callback Url
+      type: object
+      required:
+      - file
+      title: Body_create_broll_job_with_audio_upload_api_v1_broll_jobs_upload_post
+    CaptionsConfig:
+      properties:
+        burn_in:
+          type: boolean
+          title: Burn In
+          description: Whether to hardcode subtitles onto video frames
+          default: true
+        srt:
+          type: boolean
+          title: Srt
+          description: Whether to export .srt file
+          default: true
+      type: object
+      title: CaptionsConfig
+    CreateJobRequest:
+      properties:
+        audio_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Audio Url
+          description: Public URL to pre-recorded voiceover audio
+        script:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Script
+          description: Written script for speech synthesis
+        scenes:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/SceneInput'
+            type: array
+          - type: 'null'
+          title: Scenes
+          description: Pre-structured IncuBrix scene list
+        voice:
+          type: string
+          title: Voice
+          description: Voice identifier for TTS
+          default: en-US-AriaNeural
+        aspect_ratios:
+          items:
+            type: string
+          type: array
+          title: Aspect Ratios
+          description: Target video aspect ratios, e.g. ['16:9', '9:16', '1:1']
+          default:
+          - '16:9'
+        style:
+          type: string
+          title: Style
+          description: Visual style guideline for footage search
+          default: bright, modern, real-world footage
+        avoid:
+          items:
+            type: string
+          type: array
+          title: Avoid
+          description: Disallowed visual concepts or aesthetics
+        captions:
+          $ref: '#/components/schemas/CaptionsConfig'
+          description: Subtitles & caption settings
+        project_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Name
+          description: Human-friendly project title
+          default: Untitled Video Project
+        callback_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Callback Url
+          description: Optional webhook URL to notify on job completion
+      type: object
+      title: CreateJobRequest
+    ErrorDetail:
+      properties:
+        code:
+          type: string
+          title: Code
+          description: Uppercase snake-case error code, e.g. INVALID_INPUT
+        message:
+          type: string
+          title: Message
+          description: Human-readable explanation
+        retryable:
+          type: boolean
+          title: Retryable
+          description: Whether client may retry
+          default: false
+        details:
+          additionalProperties: true
+          type: object
+          title: Details
+          description: Structured error details
+      type: object
+      required:
+      - code
+      - message
+      title: ErrorDetail
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    JobResponse:
+      properties:
+        job_id:
+          type: string
+          title: Job Id
+        project_name:
+          type: string
+          title: Project Name
+        status:
+          type: string
+          title: Status
+        progress:
+          type: integer
+          maximum: 100.0
+          minimum: 0.0
+          title: Progress
+        stage:
+          type: string
+          title: Stage
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+        aspect_ratios:
+          items:
+            type: string
+          type: array
+          title: Aspect Ratios
+        scene_count:
+          type: integer
+          title: Scene Count
+          default: 0
+        result_urls:
+          additionalProperties:
+            anyOf:
+            - type: string
+            - type: 'null'
+          type: object
+          title: Result Urls
+        warnings:
+          items:
+            type: string
+          type: array
+          title: Warnings
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+      type: object
+      required:
+      - job_id
+      - project_name
+      - status
+      - progress
+      - stage
+      - created_at
+      - aspect_ratios
+      title: JobResponse
+    ReplaceSceneRequest:
+      properties:
+        query:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Query
+          description: Search query or keyword override
+        visual_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Visual Hint
+          description: Visual description override
+        provider:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider
+          description: Preferred footage provider ('pexels', 'pixabay', 'local_fallback')
+        custom_media_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Custom Media Url
+          description: Direct URL to custom video/image clip
+        rerender:
+          type: boolean
+          title: Rerender
+          description: Whether to trigger video rerendering immediately
+          default: true
+      type: object
+      title: ReplaceSceneRequest
+    SceneInput:
+      properties:
+        text:
+          type: string
+          minLength: 1
+          title: Text
+          description: Narration text for this scene
+        visual_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Visual Hint
+          description: Keywords or description for footage
+        start_time:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: 'null'
+          title: Start Time
+          description: Optional explicit start timestamp
+        end_time:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: 'null'
+          title: End Time
+          description: Optional explicit end timestamp
+      type: object
+      required:
+      - text
+      title: SceneInput
+    SceneResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+        scene_index:
+          type: integer
+          title: Scene Index
+        narration_text:
+          type: string
+          title: Narration Text
+        start_time:
+          type: number
+          title: Start Time
+        end_time:
+          type: number
+          title: End Time
+        duration:
+          type: number
+          title: Duration
+        clip_identifier:
+          type: string
+          title: Clip Identifier
+        source_provider:
+          type: string
+          title: Source Provider
+        source_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Url
+        thumbnail_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail Url
+        license_name:
+          type: string
+          title: License Name
+        license_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: License Url
+        attribution:
+          type: string
+          title: Attribution
+        commercial_use_status:
+          type: string
+          title: Commercial Use Status
+        rights_verified:
+          type: boolean
+          title: Rights Verified
+        ai_generated:
+          type: boolean
+          title: Ai Generated
+        selection_reason:
+          type: string
+          title: Selection Reason
+        relevance_score:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Relevance Score
+        scoring_method:
+          type: string
+          title: Scoring Method
+        visual_hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Visual Hint
+        warnings:
+          items:
+            type: string
+          type: array
+          title: Warnings
+      type: object
+      required:
+      - id
+      - scene_index
+      - narration_text
+      - start_time
+      - end_time
+      - duration
+      - clip_identifier
+      - source_provider
+      - license_name
+      - attribution
+      - commercial_use_status
+      - rights_verified
+      - ai_generated
+      - selection_reason
+      - scoring_method
+      title: SceneResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

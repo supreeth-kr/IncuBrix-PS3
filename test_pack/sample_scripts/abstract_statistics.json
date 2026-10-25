@@ -1,0 +1,12 @@
+{
+  "project_name": "Data Intelligence & Economic Metrics",
+  "script": "Over 78% of enterprise decision-makers prioritize data-driven forecasting. When markets fluctuate unpredictably, clarity emerges from disciplined observation. Resilient organizations adapt faster, turning analytical depth into measurable momentum.",
+  "voice": "en-US-GuyNeural",
+  "aspect_ratios": ["16:9"],
+  "style": "clean minimalist business analytics charts dark surface",
+  "avoid": ["flashy cartoon animations", "unverified financial logos"],
+  "captions": {
+    "burn_in": true,
+    "srt": true
+  }
+}

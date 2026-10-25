@@ -1,0 +1,32 @@
+# Environments
+venv/
+backend/venv/
+.env
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build artifacts
+dist/
+frontend/dist/
+__pycache__/
+backend/**/__pycache__/
+*.pyc
+
+# Local runtime storage & database
+data/
+backend/data/
+storage/
+backend/storage/
+*.db
+*.sqlite
+
+# Testing caches & logs
+.pytest_cache/
+backend/.pytest_cache/
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db

@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #090b0e;
+    color: #f1f5f9;
+  }
+}
+
+/* Sleek custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #11141a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b3445;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d485f;
+}
+
+/* Subtle focus rings */
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(132, 204, 22, 0.4);
+}

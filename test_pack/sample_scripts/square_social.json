@@ -1,0 +1,12 @@
+{
+  "project_name": "Sustainable Architecture Square Format",
+  "script": "Sustainable urban design seamlessly integrates lush vertical gardens with zero-emission energy grids. Architects around the world are redefining skylines with natural timber, sunlight, and clean water systems.",
+  "voice": "en-US-AriaNeural",
+  "aspect_ratios": ["1:1"],
+  "style": "modern green architecture sustainable city clean aesthetic",
+  "avoid": ["industrial pollution", "overcrowded smog"],
+  "captions": {
+    "burn_in": true,
+    "srt": true
+  }
+}

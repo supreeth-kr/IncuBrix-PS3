@@ -1,0 +1,12 @@
+{
+  "project_name": "Ethical Healthcare & Community Resilience",
+  "script": "Access to primary healthcare remains a fundamental human priority across rural and urban communities. Global medical volunteers dedicate their expertise during humanitarian emergencies with profound empathy. Ethical reporting demands dignified representation without sensationalism.",
+  "voice": "en-GB-SoniaNeural",
+  "aspect_ratios": ["16:9"],
+  "style": "respectful dignified documentary medical healthcare",
+  "avoid": ["sensationalized imagery", "graphic medical distress", "realistic celebrity faces", "fake brand logos"],
+  "captions": {
+    "burn_in": true,
+    "srt": true
+  }
+}

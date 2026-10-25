@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: incubrix-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=IncuBrix Script & Voiceover to B-Roll Engine
+      - APP_VERSION=1.0.0
+      - DEBUG=false
+      - DATABASE_URL=sqlite+aiosqlite:///./data/incubrix.db
+      - LOCAL_STORAGE_DIR=./storage
+      - FFMPEG_PATH=ffmpeg
+      - FFPROBE_PATH=ffprobe
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY:-}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-incubrix-secret-key-2026}
+    volumes:
+      - backend_data:/app/data
+      - backend_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: incubrix-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  minio:
+    image: minio/minio:latest
+    container_name: incubrix-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-incubrixadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-incubrixpassword2026}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  backend_data:
+  backend_storage:
+  minio_data:
